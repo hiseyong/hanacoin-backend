@@ -72,8 +72,32 @@ async def login(data: LoginRequest):
         conn.close()
 
 
-@router.get("/userinfo", response_model=UserInfoResponse)
-async def get_user_info(user_id: int = Depends(get_current_user)):
+@router.get("/info", response_model=UserInfoResponse)
+async def get_user_info(current_user: int = Depends(get_current_user)):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT id, username, wallet_address, wallet_public_key
+                FROM users WHERE id = %s
+            """, (current_user['id'],))
+            user = cursor.fetchone()
+
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+
+        return user  # dict와 유사한 row 객체가 반환됨
+
+    finally:
+        conn.close()
+
+
+@router.get("/info/{user_id}")
+async def get_user_info(
+    user_id: int,
+    current_user: dict = Depends(get_current_user)  # 토큰에서 현재 로그인한 사용자 정보
+):
+
     conn = get_connection()
     try:
         with conn.cursor() as cursor:
@@ -82,11 +106,8 @@ async def get_user_info(user_id: int = Depends(get_current_user)):
                 FROM users WHERE id = %s
             """, (user_id,))
             user = cursor.fetchone()
-
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
-
-        return user  # dict와 유사한 row 객체가 반환됨
-
+            return user
     finally:
         conn.close()

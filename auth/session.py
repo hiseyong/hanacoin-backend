@@ -23,7 +23,6 @@ def get_token_from_header(request: Request) -> str:
 def get_current_user(request: Request):
     token = get_token_from_header(request)
 
-    # 디코딩 시도
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: int = payload.get("user_id")
@@ -32,15 +31,25 @@ def get_current_user(request: Request):
     except JWTError:
         raise HTTPException(status_code=401, detail="Token verification failed")
 
-    # 세션 DB에서 토큰 유효성 확인
     conn = get_connection()
     try:
         with conn.cursor() as cursor:
+            # 세션 유효성 확인
             cursor.execute("SELECT id FROM sessions WHERE user_id = %s AND token = %s", (user_id, token))
             session = cursor.fetchone()
             if not session:
                 raise HTTPException(status_code=401, detail="Session not found or expired")
+
+            # 사용자 정보 조회
+            cursor.execute("""
+                SELECT id, username, wallet_address, wallet_public_key
+                FROM users WHERE id = %s
+            """, (user_id,))
+            user = cursor.fetchone()
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            return user  # 전체 사용자 정보 반환
+
     finally:
         conn.close()
-
-    return user_id  # 또는 사용자 정보 전체 반환도 가능

@@ -1,0 +1,75 @@
+from fastapi import APIRouter, Depends, Query, HTTPException
+from database.connection import get_connection
+from auth.session import get_current_user
+from models.market import ProductCreateRequest, ProductResponse
+from typing import List, Optional
+
+router = APIRouter(
+    prefix="/markets",
+    tags=["Markets"]
+)
+
+
+# 상품 등록
+@router.post("/products", response_model=dict)
+async def create_product(
+    data: ProductCreateRequest,
+    user: dict = Depends(get_current_user)  # dict 형태 전체 사용자 정보
+):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO products (seller_id, title, description, price, category)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (user['id'], data.title, data.description, data.price, data.category))
+            conn.commit()
+        return {"msg": "Product created successfully"}
+    finally:
+        conn.close()
+
+# 상품 전체 조회
+@router.get("/products", response_model=List[ProductResponse])
+async def list_products(category: Optional[str] = Query(None, description="카테고리 필터")):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            if category:
+                cursor.execute("""
+                    SELECT p.id, p.title, p.description, p.price, p.category, p.created_at, u.username AS seller
+                    FROM products p
+                    JOIN users u ON p.seller_id = u.id
+                    WHERE p.is_active = TRUE AND p.category = %s
+                    ORDER BY p.created_at DESC
+                """, (category,))
+            else:
+                cursor.execute("""
+                    SELECT p.id, p.title, p.description, p.price, p.category, p.created_at, u.username AS seller
+                    FROM products p
+                    JOIN users u ON p.seller_id = u.id
+                    WHERE p.is_active = TRUE
+                    ORDER BY p.created_at DESC
+                """)
+            return cursor.fetchall()
+    finally:
+        conn.close()
+
+
+# 단일 상품 조회
+@router.get("/product/{product_id}", response_model=ProductResponse)
+async def get_product(product_id: int):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT p.id, p.title, p.description, p.price, p.category, p.created_at, u.username AS seller
+                FROM products p
+                JOIN users u ON p.seller_id = u.id
+                WHERE p.id = %s AND p.is_active = TRUE
+            """, (product_id,))
+            product = cursor.fetchone()
+            if not product:
+                raise HTTPException(status_code=404, detail="Product not found")
+            return product
+    finally:
+        conn.close()

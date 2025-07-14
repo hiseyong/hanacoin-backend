@@ -1,0 +1,8 @@
+bcrypt
+fastapi
+uvicorn
+passlib
+pymysql
+python-multipart
+dotenv
+ecdsa

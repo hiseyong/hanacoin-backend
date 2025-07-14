@@ -4,6 +4,9 @@ from starlette.middleware.cors import CORSMiddleware
 from passlib.context import CryptContext
 from routers import users
 from routers import auth
+from routers import transactions
+from routers import alerts
+from routers import markets
 
 db_config = {
     "host": "localhost",
@@ -57,3 +60,6 @@ app.openapi = custom_openapi
 
 app.include_router(users.router)
 app.include_router(auth.router)
+app.include_router(transactions.router)
+app.include_router(alerts.router)
+app.include_router(markets.router)
