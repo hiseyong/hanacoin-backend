@@ -3,10 +3,10 @@ from typing import Optional
 from datetime import datetime
 
 class ProductCreateRequest(BaseModel):
-    title: str = Field(..., max_length=100)
+    title: str
     description: str = None
     price: float
-    category: str = Field(default="general")
+    category: str
     method: str
 
 class ProductResponse(BaseModel):
