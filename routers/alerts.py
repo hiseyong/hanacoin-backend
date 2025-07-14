@@ -13,7 +13,7 @@ async def get_recommended_deals(user_id: int = Depends(get_current_user)):
     try:
         with conn.cursor() as cursor:
             cursor.execute("""
-                SELECT p.id, p.title, p.price, p.category, p.created_at, u.username AS seller
+                SELECT p.id, p.title, p.description, p.price, p.category, p.created_at, u.username AS seller
                 FROM products p
                 JOIN users u ON p.seller_id = u.id
                 WHERE p.is_active = TRUE
