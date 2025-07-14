@@ -18,7 +18,7 @@ async def get_recommended_deals(user_id: int = Depends(get_current_user)):
                 JOIN users u ON p.seller_id = u.id
                 WHERE p.is_active = TRUE
                 ORDER BY p.created_at DESC
-                LIMIT 5
+                LIMIT 3
             """)
             products = cursor.fetchall()
 
