@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
 from database.connection import get_connection
 from auth.session import get_current_user
-from models.market import ProductCreateRequest, ProductResponse
+from models.market import ProductCreateRequest, ProductResponse, ProductCommentCreate, ProductCommentResponse
 from typing import List, Optional
 
 router = APIRouter(
@@ -71,5 +71,43 @@ async def get_product(product_id: int):
             if not product:
                 raise HTTPException(status_code=404, detail="Product not found")
             return product
+    finally:
+        conn.close()
+
+@router.post("/comments", response_model=dict)
+async def add_comment(data: ProductCommentCreate, user=Depends(get_current_user)):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # 상품 존재 확인
+            cursor.execute("SELECT id FROM products WHERE id = %s AND is_active = TRUE", (data.product_id,))
+            if not cursor.fetchone():
+                raise HTTPException(status_code=404, detail="Product not found")
+
+            # 댓글 삽입
+            cursor.execute("""
+                INSERT INTO product_comments (product_id, user_id, content)
+                VALUES (%s, %s, %s)
+            """, (data.product_id, user["id"], data.content))
+            conn.commit()
+            return {"msg": "Comment added"}
+    finally:
+        conn.close()
+
+
+# 댓글 조회
+@router.get("/comments/{product_id}", response_model=list[ProductCommentResponse])
+async def get_comments(product_id: int):
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT pc.id, pc.product_id, u.username, pc.content, pc.created_at
+                FROM product_comments pc
+                JOIN users u ON pc.user_id = u.id
+                WHERE pc.product_id = %s
+                ORDER BY pc.created_at DESC
+            """, (product_id,))
+            return cursor.fetchall()
     finally:
         conn.close()

@@ -16,3 +16,14 @@ class ProductResponse(BaseModel):
     category: str
     created_at: datetime
     seller: str
+
+class ProductCommentCreate(BaseModel):
+    product_id: int
+    content: str
+
+class ProductCommentResponse(BaseModel):
+    id: int
+    product_id: int
+    username: str
+    content: str
+    created_at: datetime

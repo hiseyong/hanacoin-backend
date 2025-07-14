@@ -5,6 +5,7 @@ from database.user import create_user
 from utils.crypto import hash_password, verify_password
 from utils.wallet import generate_wallet_keys
 from auth.session import create_session_token, get_current_user
+from database.transaction import get_wallet_by_address
 
 router = APIRouter(
     prefix="/users",
@@ -111,3 +112,18 @@ async def get_user_info(
             return user
     finally:
         conn.close()
+
+
+@router.get("/balance")
+async def get_wallet_balance(current_user: dict = Depends(get_current_user)):
+    wallet_address = current_user["wallet_address"]
+
+    wallet = get_wallet_by_address(wallet_address)
+    if not wallet:
+        raise HTTPException(status_code=404, detail="Wallet not found")
+
+    return {
+        "username": wallet["username"],
+        "wallet_address": wallet_address,
+        "balance": str(wallet["balance"])  # Decimal → 문자열 변환
+    }
