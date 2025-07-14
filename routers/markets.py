@@ -36,7 +36,7 @@ async def list_products(category: Optional[str] = Query(None, description="ì¹´í…
         with conn.cursor() as cursor:
             if category:
                 cursor.execute("""
-                    SELECT p.id, p.title, p.description, p.price, p.category, p.created_at, u.username AS seller
+                    SELECT p.id, p.title, p.description, p.price, p.category, p.created_at, p.method, u.username AS seller
                     FROM products p
                     JOIN users u ON p.seller_id = u.id
                     WHERE p.is_active = TRUE AND p.category = %s
@@ -44,7 +44,7 @@ async def list_products(category: Optional[str] = Query(None, description="ì¹´í…
                 """, (category,))
             else:
                 cursor.execute("""
-                    SELECT p.id, p.title, p.description, p.price, p.category, p.created_at, u.username AS seller
+                    SELECT p.id, p.title, p.description, p.price, p.category, p.created_at, p.method, u.username AS seller
                     FROM products p
                     JOIN users u ON p.seller_id = u.id
                     WHERE p.is_active = TRUE
@@ -62,7 +62,7 @@ async def get_product(product_id: int):
     try:
         with conn.cursor() as cursor:
             cursor.execute("""
-                SELECT p.id, p.title, p.description, p.price, p.category, p.created_at, u.username AS seller
+                SELECT p.id, p.title, p.description, p.price, p.category, p.created_at, p.method, u.username AS seller
                 FROM products p
                 JOIN users u ON p.seller_id = u.id
                 WHERE p.id = %s AND p.is_active = TRUE
