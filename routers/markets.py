@@ -14,15 +14,15 @@ router = APIRouter(
 @router.post("/products", response_model=dict)
 async def create_product(
     data: ProductCreateRequest,
-    user: dict = Depends(get_current_user)  # dict 형태 전체 사용자 정보
+    user: dict = Depends(get_current_user)
 ):
     conn = get_connection()
     try:
         with conn.cursor() as cursor:
             cursor.execute("""
-                INSERT INTO products (seller_id, title, description, price, category)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (user['id'], data.title, data.description, data.price, data.category))
+                INSERT INTO products (seller_id, title, description, price, category, method)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (user['id'], data.title, data.description, data.price, data.category, data.method))
             conn.commit()
         return {"msg": "Product created successfully"}
     finally:

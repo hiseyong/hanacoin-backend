@@ -3,10 +3,11 @@ from typing import Optional
 from datetime import datetime
 
 class ProductCreateRequest(BaseModel):
-    title: str
-    description: Optional[str] = None
+    title: str = Field(..., max_length=100)
+    description: str = None
     price: float
-    category: str
+    category: str = Field(default="general")
+    method: str
 
 class ProductResponse(BaseModel):
     id: int
